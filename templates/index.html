@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Vibration Monitor</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="brand">ESP32 Vibration Monitor</div>
+    <div class="server-status">
+        <span class="status-dot"></span>
+        <span>Server Online</span>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- DEVICE BAR -->
+    <section class="device-bar">
+        <div>
+            <div class="device-name" id="deviceName">Loading...</div>
+            <small>Sensor Monitoring System</small>
+        </div>
+        <div id="deviceStatus" class="device-offline">● Checking...</div>
+    </section>
+
+    <!-- TOP DASHBOARD: VIEWPORT LEFT / FEATURES RIGHT -->
+    <div class="dashboard-top-grid">
+
+    <!-- =====================================================
+         VIEWPORT
+    ====================================================== -->
+    <section class="section viewport-section">
+        <div class="section-heading green-heading">
+            <div class="section-icon">▣</div>
+            <h2>Viewport วิวพอร์ต</h2>
+        </div>
+
+        <!-- REAL-TIME GRAPH -->
+        <div class="panel graph-panel">
+            <div class="graph-header">
+                <div class="panel-title">กราฟแสดงผลแรงสั่นสะเทือน (Real-time)</div>
+                <div class="live-values">
+                    <span>PGA: <b id="pga">0.000</b>g</span>
+                    <span class="pendulum-live">Pendulum: <b id="pendulum">0.00</b></span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="vibrationChart"></canvas>
+            </div>
+        </div>
+
+        <!-- REALTIME CARDS -->
+        <div class="viewport-grid">
+            <div class="panel realtime-panel">
+                <div class="panel-title">มอนิเตอร์ทิศทางการสั่นสะเทือน (Real-time)</div>
+                <div class="monitor-content">
+                    <div class="monitor-item">
+                        <div class="monitor-label">แสดงทิศทางสัมพัทธ์</div>
+                        <div class="compass">
+                            <div class="compass-label north">N</div>
+                            <div class="compass-label east">E</div>
+                            <div class="compass-label south">S</div>
+                            <div class="compass-label west">W</div>
+                            <div id="directionNeedle" class="direction-needle">
+                                <div class="needle-dot"></div>
+                            </div>
+                            <div class="compass-center"></div>
+                        </div>
+                        <div class="direction-value">Direction: <span id="realtimeDirection">-</span></div>
+                    </div>
+
+                    <div class="monitor-item">
+                        <div class="monitor-label">ความเร่งการแกว่งลูกตุ้ม</div>
+                        <div class="pendulum-box">
+                            <div class="pendulum-top"></div>
+                            <div id="pendulumRod" class="pendulum-rod">
+                                <div class="pendulum-ball"></div>
+                            </div>
+                            <div class="pendulum-floor"></div>
+                        </div>
+                        <div class="vector-value">Vector: <span id="realtimeVector">0.00</span> g</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel sensor-compare-panel">
+                <div class="panel-title">เปรียบเทียบค่าเฉลี่ยเซ็นเซอร์</div>
+                <div class="sensor-bars">
+                    <div class="sensor-bar-item">
+                        <div class="bar-container"><div id="barX" class="sensor-bar bar-x"></div></div>
+                        <div class="bar-label">แกน X</div>
+                        <div id="barValueX" class="bar-value">0.00</div>
+                    </div>
+                    <div class="sensor-bar-item">
+                        <div class="bar-container"><div id="barY" class="sensor-bar bar-y"></div></div>
+                        <div class="bar-label">แกน Y</div>
+                        <div id="barValueY" class="bar-value">0.00</div>
+                    </div>
+                    <div class="sensor-bar-item">
+                        <div class="bar-container"><div id="barZ" class="sensor-bar bar-z"></div></div>
+                        <div class="bar-label">แกน Z</div>
+                        <div id="barValueZ" class="bar-value">0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel sensor-status-panel">
+                <div class="panel-title">สถานะเซ็นเซอร์</div>
+                <div class="status-row">
+                    <span><i class="status-dot-inline"></i>Gyroscope (MPU)</span>
+                    <b id="mpuStatus" class="status-badge">ปกติ</b>
+                </div>
+                <div class="status-row">
+                    <span><i class="status-dot-inline"></i>Sharp Distance</span>
+                    <b id="sharpStatus" class="status-badge">ปกติ</b>
+                </div>
+                <div class="status-row">
+                    <span><i class="status-dot-inline"></i>Network</span>
+                    <b id="networkStatus" class="status-badge">เชื่อมต่อ</b>
+                </div>
+            </div>
+        </div>
+
+        <!-- KEEP VIBRATION LEVEL -->
+        <div class="panel vibration-level-panel">
+            <div class="panel-title">Vibration Level</div>
+            <div id="level" class="level LOW">LOW</div>
+            <div class="level-meta">
+                <span>Peak PGA: <b id="peakPga">0.000</b> G</span>
+                <span>Estimated ML: <b id="ml">0.00</b></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- =====================================================
+         FEATURES
+    ====================================================== -->
+    <section class="section features-section">
+        <div class="section-heading red-heading">
+            <div class="section-icon">⚙</div>
+            <h2>Features ฟีเจอร์</h2>
+        </div>
+
+        <div class="panel settings-panel">
+            <div class="settings-title">☷ &nbsp;ตั้งค่าความรุนแรง</div>
+
+            <div class="setting-row">
+                <div class="setting-label">
+                    <span>ระดับ Sensitivity (ความไว)</span>
+                    <b id="sensitivityText">ปานกลาง</b>
+                </div>
+                <input id="sensitivityRange" type="range" min="0" max="2" step="1" value="1">
+                <div class="range-caption"><span>ต่ำ</span><span>สูง</span></div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label">
+                    <span>ตั้งค่าเตือนระดับ Richter</span>
+                    <b id="richterText">4.5</b>
+                </div>
+                <input id="richterRange" type="range" min="1" max="9" step="0.1" value="4.5">
+                <div class="range-caption"><span>1.0</span><span>9.0</span></div>
+            </div>
+        </div>
+    </section>
+
+    </div>
+
+    <!-- =====================================================
+         DATABASE
+    ====================================================== -->
+    <section class="section database-section">
+        <div class="section-heading blue-heading">
+            <div class="section-icon">▤</div>
+            <h2>Website Database</h2>
+        </div>
+
+        <div class="database-grid">
+            <div class="panel database-table-panel">
+                <div class="panel-title-row">
+                    <div class="panel-title">ข้อมูลแรงสั่นสะเทือนสะสม (ล่าสุด)</div>
+                    <button class="small-btn" id="loadAllBtn">ดูทั้งหมด</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วัน/เวลา</th>
+                                <th>แกน X (G)</th>
+                                <th>แกน Y (G)</th>
+                                <th>แกน Z (G)</th>
+                                <th>Pendulum</th>
+                                <th>สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel export-panel">
+                <div class="panel-title">รวบรวมข้อมูล (Export)</div>
+                <label for="exportDate">เลือกช่วงเวลา</label>
+                <input type="date" id="exportDate">
+                <div class="export-buttons">
+                    <button class="export-btn pdf-btn" id="exportPdfBtn">▣ PDF</button>
+                    <button class="export-btn excel-btn" id="exportExcelBtn">▤ Excel</button>
+                </div>
+                <div class="server-box">
+                    <span>สถานะเซิร์ฟเวอร์</span>
+                    <b><i class="status-dot-inline"></i>Online</b>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+</main>
+
+<script src="/static/dashboard.js"></script>
+</body>
+</html>
